@@ -1,0 +1,158 @@
+group 'org.agilemicroservices'
+version '1.0'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+sourceCompatibility = 1.8
+
+ext {
+    pomFilePath = "${project.projectDir}/build/publications/jar/pom-default.xml"
+    pomFile = file(pomFilePath)
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+task sourceJar(type: Jar, dependsOn: classes) {
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+}
+
+configurations {
+    pom
+}
+
+artifacts {
+    archives jar
+    archives sourceJar
+    archives javadocJar
+    if (pomFile.exists()) {
+        pom pomFile
+    }
+}
+
+task signPom (type: Sign) {
+    sign configurations.pom
+}
+
+def getPomSignature = {
+    return project.tasks.signPom.signatureFiles.collect{it}[0]
+}
+
+task signJars (type : Sign, dependsOn: [jar, javadocJar, sourceJar]) {
+    sign configurations.archives
+}
+
+if (project.ext.pomFile.exists()) {
+    task preparePublication (dependsOn : [signJars, signPom])
+} else {
+    task preparePublication(dependsOn: signJars)
+}
+
+def getSignatureFiles = {
+    def allFiles = project.tasks.signJars.signatureFiles.collect { it }
+    def signedSources = allFiles.find { it.name.contains('-sources') }
+    def signedJavadoc = allFiles.find { it.name.contains('-javadoc') }
+    def signedJar = (allFiles - [signedSources, signedJavadoc])[0]
+    return [
+            [archive: signedSources, classifier: 'sources', extension: 'jar.asc'],
+            [archive: signedJavadoc, classifier: 'javadoc', extension: 'jar.asc'],
+            [archive: signedJar,     classifier: null,      extension: 'jar.asc']
+    ]
+}
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.9'
+}
+
+
+dependencies {
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.5'
+
+    compile group: 'commons-io', name: 'commons-io', version: '2.4'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'
+
+    compile group: 'com.univocity', name: 'univocity-parsers', version: '1.5.5'
+    compile group: 'net.lingala.zip4j', name: 'zip4j', version: '1.3.2'
+
+    // slf4j
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.13'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.3'
+
+    // hibernate (required by soft references in runtime generated bean definitions)
+    compile group: 'org.hibernate', name: 'hibernate-entitymanager', version: '5.0.5.Final'
+
+    // spring
+    compile group: 'org.springframework', name: 'spring-context', version: '4.2.3.RELEASE'
+    compile group: 'org.springframework', name: 'spring-orm', version: '4.2.3.RELEASE'
+    compile group: 'org.springframework.data', name: 'spring-data-jpa', version: '1.9.1.RELEASE'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+publishing {
+    publications {
+
+        jar(MavenPublication) {
+            from components.java
+            pom.withXml {
+                asNode().appendNode('description', 'ORM autoconfiguration support.')
+                asNode().appendNode('name', rootProject.name)
+                asNode().appendNode('url', 'https://github.com/agilemicroservices/agilemicroservices-orm')
+                asNode().appendNode('licenses')
+                    .appendNode('license')
+                        .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt')
+                asNode().appendNode('scm')
+                    .appendNode('url', 'https://github.com/agilemicroservices/agilemicroservices-orm')
+                asNode().appendNode('developers')
+                    .appendNode('developer')
+                        .appendNode('id', 'agilemicroservices')
+
+                if (!project.ext.pomFile.exists()) {
+                    writeTo (project.ext.pomFile)
+                }
+            }
+
+            artifact sourceJar {
+                classifier 'sources'
+            }
+
+            artifact javadocJar {
+                classifier 'javadoc'
+            }
+        }
+
+        gpgJars (MavenPublication) {
+            // give signature files to artifact method
+            getSignatureFiles().each {signature ->
+                if (signature.archive.exists()) {
+                    artifact(signature.archive) {
+                        classifier = signature.classifier
+                        extension = signature.extension
+                    }
+                }
+            }
+        }
+
+        if (project.ext.pomFile.exists()) {
+            def signatureArchive = getPomSignature()
+            if (signatureArchive.exists()) {
+                gpgPom(MavenPublication) {
+                    artifact(signatureArchive) {
+                        classifier = null
+                        extension = 'pom.asc'
+                    }
+                }
+            }
+        }
+    }
+}
