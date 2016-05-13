@@ -90,6 +90,7 @@ dependencies {
 
     // hibernate (required by soft references in runtime generated bean definitions)
     compile group: 'org.hibernate', name: 'hibernate-entitymanager', version: '5.0.5.Final'
+    compile group: 'org.hibernate', name: 'hibernate-java8', version: '5.0.5.Final'
 
     // spring
     compile group: 'org.springframework', name: 'spring-context', version: '4.2.3.RELEASE'
