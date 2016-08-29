@@ -142,11 +142,13 @@ public class DynamicRepositoryBeanDefinitionRegistrarSupport
         logger.debug("Defining DataSource '{}'.", beanName);
 
         registry.registerBeanDefinition(beanName, BeanDefinitionBuilder
-                .rootBeanDefinition(DriverManagerDataSource.class.getName())
-                .addPropertyValue("driverClassName", properties.get(DRIVER_CLASS_NAME))
-                .addPropertyValue("url", properties.get(URL))
-                .addPropertyValue("username", properties.get(USERNAME))
+                .rootBeanDefinition(com.mchange.v2.c3p0.ComboPooledDataSource.class.getName())
+                .addPropertyValue("driverClass", properties.get(DRIVER_CLASS_NAME))
+                .addPropertyValue("jdbcUrl", properties.get(URL))
+                .addPropertyValue("user", properties.get(USERNAME))
                 .addPropertyValue("password", properties.get(PASSWORD))
+                .addPropertyValue("minPoolSize", "0")
+                .addPropertyValue("maxPoolSize", "20")
                 .getBeanDefinition());
     }
 
