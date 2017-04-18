@@ -1,9 +1,20 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url 'https://repository.jboss.org/nexus/content/groups/public' }
+    }
+    dependencies {
+        classpath group: 'com.layer', name: 'gradle-git-repo-plugin', version: '2.0.2'
+    }
+}
+
 group 'org.agilemicroservices'
 version '1.0'
 
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
+apply plugin: 'git-repo'
 apply plugin: 'signing'
 
 sourceCompatibility = 1.8
@@ -11,17 +22,18 @@ sourceCompatibility = 1.8
 ext {
     pomFilePath = "${project.projectDir}/build/publications/jar/pom-default.xml"
     pomFile = file(pomFilePath)
+
+    gitPublishConfig {
+        org = "jmvscript"
+        repo = "maven-repo"
+        gitUrl = 'https://agilemicroservices@github.com/agilemicroservices/maven-repo.git'
+    }
 }
 
 repositories {
     mavenLocal()
     mavenCentral()
 }
-
-configurations {
-    all*.exclude group: 'xml-apis', module: 'xml-apis'
-}
-
 
 task sourceJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allJava
@@ -33,6 +45,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 
 configurations {
     pom
+    all*.exclude group: 'xml-apis', module: 'xml-apis'
 }
 
 artifacts {
@@ -108,21 +121,27 @@ dependencies {
 }
 
 publishing {
+    repositories {
+        maven {
+            url "file://${gitPublishConfig.home}/${gitPublishConfig.org}/${gitPublishConfig.repo}/releases"
+        }
+    }
+
     publications {
 
         jar(MavenPublication) {
             from components.java
             pom.withXml {
-                asNode().appendNode('description', 'ORM autoconfiguration support.')
+                asNode().appendNode('description', 'Agilemicroservices ORM library.')
                 asNode().appendNode('name', rootProject.name)
                 asNode().appendNode('url', 'https://github.com/agilemicroservices/agilemicroservices-orm')
                 asNode().appendNode('licenses')
-                    .appendNode('license')
+                        .appendNode('license')
                         .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt')
                 asNode().appendNode('scm')
-                    .appendNode('url', 'https://github.com/agilemicroservices/agilemicroservices-orm')
+                        .appendNode('url', 'https://github.com/agilemicroservices/agilemicroservices-orm')
                 asNode().appendNode('developers')
-                    .appendNode('developer')
+                        .appendNode('developer')
                         .appendNode('id', 'agilemicroservices')
 
                 if (!project.ext.pomFile.exists()) {
