@@ -81,7 +81,7 @@ public class DynamicRepositoryBeanDefinitionRegistrarSupport
             registerDataSourceDefinitions(dataSourceName, properties, registry);
 
             PropertiesRepositoryConfigurationSource source =
-                    new PropertiesRepositoryConfigurationSource(properties, environment);
+                    new PropertiesRepositoryConfigurationSource(properties, environment, resourceLoader, registry);
 
             String entityManagerFactoryName = unitName + "EntityManagerFactory";
             registerEntityManagerFactoryDefinitions(entityManagerFactoryName, dataSourceName, unitName, source, registry);
