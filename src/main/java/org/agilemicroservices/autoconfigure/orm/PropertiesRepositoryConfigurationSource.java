@@ -1,13 +1,16 @@
 package org.agilemicroservices.autoconfigure.orm;
 
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.core.env.Environment;
-import org.springframework.data.jpa.repository.support.JpaRepositoryFactoryBean;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.repository.config.RepositoryConfigurationSourceSupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
+import org.springframework.data.util.Streamable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 public class PropertiesRepositoryConfigurationSource extends RepositoryConfigurationSourceSupport {
@@ -20,8 +23,8 @@ public class PropertiesRepositoryConfigurationSource extends RepositoryConfigura
     private Map<String, String> properties;
 
 
-    public PropertiesRepositoryConfigurationSource(Map<String, String> properties, Environment environment) {
-        super(environment);
+    public PropertiesRepositoryConfigurationSource(Map<String, String> properties, Environment environment, ResourceLoader resourceLoader, BeanDefinitionRegistry registry) {
+        super(environment, resourceLoader.getClassLoader(), registry);
         this.properties = properties;
     }
 
@@ -35,7 +38,7 @@ public class PropertiesRepositoryConfigurationSource extends RepositoryConfigura
     }
 
     @Override
-    public Iterable<String> getBasePackages() {
+    public Streamable<String> getBasePackages() {
         List<String> basePackages = new ArrayList<>(10);
         String str = properties.get(BASE_PACKAGES);
         if (str != null) {
@@ -46,37 +49,38 @@ public class PropertiesRepositoryConfigurationSource extends RepositoryConfigura
                 }
             }
         }
-        return basePackages;
+        return (Streamable<String>) basePackages;
     }
 
     @Override
-    public Object getQueryLookupStrategyKey() {
-        return QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND;
+    public Optional<Object> getQueryLookupStrategyKey() {
+        return Optional.of(QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND);
     }
 
     @Override
-    public String getRepositoryImplementationPostfix() {
-        return "Impl";
+    public Optional<String> getRepositoryImplementationPostfix() {
+        return Optional.of("Impl");
     }
 
     @Override
-    public String getNamedQueryLocation() {
-        return "";
+    public Optional<String> getNamedQueryLocation() {
+        return Optional.of("");
+    }
+
+
+    @Override
+    public Optional<String> getRepositoryBaseClassName() {
+        return Optional.empty();
     }
 
     @Override
-    public String getRepositoryFactoryBeanName() {
-        return JpaRepositoryFactoryBean.class.getName();
+    public Optional<String> getRepositoryFactoryBeanClassName() {
+        return Optional.empty();
     }
 
     @Override
-    public String getRepositoryBaseClassName() {
-        return null;
-    }
-
-    @Override
-    public String getAttribute(String name) {
-        return properties.get(name);
+    public Optional<String> getAttribute(String name) {
+        return Optional.ofNullable(properties.get(name));
     }
 
     @Override
