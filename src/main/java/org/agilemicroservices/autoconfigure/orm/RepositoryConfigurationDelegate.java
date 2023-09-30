@@ -77,10 +77,9 @@ public class RepositoryConfigurationDelegate {
                                            ResourceLoader resourceLoader, Environment environment) {
         Assert.notNull(resourceLoader);
 
-        RepositoryBeanNameGenerator generator = new RepositoryBeanNameGenerator();
-        generator.setBeanClassLoader(resourceLoader.getClassLoader());
+        RepositoryBeanNameGenerator generator = new RepositoryBeanNameGenerator(resourceLoader.getClassLoader());
 
-        this.beanNameGenerator = generator;
+        this.beanNameGenerator = (BeanNameGenerator) generator;
         this.configurationSource = configurationSource;
         this.resourceLoader = resourceLoader;
         this.environment = defaultEnvironment(environment, resourceLoader);
@@ -133,7 +132,7 @@ public class RepositoryConfigurationDelegate {
 
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(REPOSITORY_REGISTRATION, extension.getModuleName(), beanName,
-                        configuration.getRepositoryInterface(), extension.getRepositoryFactoryClassName());
+                        configuration.getRepositoryInterface(), extension.getRepositoryFactoryBeanClassName());
             }
 
             registry.registerBeanDefinition(beanName, beanDefinition);
