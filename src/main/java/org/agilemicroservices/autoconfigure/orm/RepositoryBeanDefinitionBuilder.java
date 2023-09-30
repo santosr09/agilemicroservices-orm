@@ -85,9 +85,9 @@ class RepositoryBeanDefinitionBuilder {
         Assert.notNull(registry, "BeanDefinitionRegistry must not be null!");
         Assert.notNull(resourceLoader, "ResourceLoader must not be null!");
 
-        String factoryBeanName = configuration.getRepositoryFactoryBeanName();
+        String factoryBeanName = configuration.getRepositoryFactoryBeanClassName();
         factoryBeanName = StringUtils.hasText(factoryBeanName) ? factoryBeanName : extension
-                .getRepositoryFactoryClassName();
+                .getRepositoryFactoryBeanClassName();
 
         BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(factoryBeanName);
 
@@ -100,8 +100,8 @@ class RepositoryBeanDefinitionBuilder {
         NamedQueriesBeanDefinitionBuilder definitionBuilder = new NamedQueriesBeanDefinitionBuilder(
                 extension.getDefaultNamedQueryLocation());
 
-        if (StringUtils.hasText(configuration.getNamedQueriesLocation())) {
-            definitionBuilder.setLocations(configuration.getNamedQueriesLocation());
+        if (StringUtils.hasText(configuration.getNamedQueriesLocation().orElse(""))) {
+            definitionBuilder.setLocations(configuration.getNamedQueriesLocation().orElse(""));
         }
 
         builder.addPropertyValue("namedQueries", definitionBuilder.build(configuration.getSource()));
@@ -131,8 +131,7 @@ class RepositoryBeanDefinitionBuilder {
             return beanName;
         }
 
-        AbstractBeanDefinition beanDefinition = implementationDetector.detectCustomImplementation(
-                configuration.getImplementationClassName(), configuration.getBasePackages());
+        AbstractBeanDefinition beanDefinition = implementationDetector.detectCustomImplementation(configuration).get();
 
         if (null == beanDefinition) {
             return null;
